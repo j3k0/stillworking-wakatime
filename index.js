@@ -27,8 +27,9 @@ function rememberActivity(r) {
   }
   // reduce risk of corruption by first writing to a temporary file
   const fname = process.env.HOME + '/.stillworking';
+  fs.copyFileSync(fname, fname + '.bak');
   fs.writeFileSync(fname + '.tmp', activities.join("\n"));
-  fs.copyFile(fname + '.tmp', fname, () => {});
+  fs.renameSync(fname + '.tmp', fname);
 }
 
 const projects = () =>
@@ -104,6 +105,7 @@ async function applePrompt() {
       return await applePrompt();
     }
     else {
+      rememberActivity(ret);
       return ret;
     }
   }
