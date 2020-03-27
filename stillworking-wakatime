@@ -17,7 +17,7 @@ function workingdir() {
 }
 
 function indexjs() {
-  "$ALACRITTY" -d 80 10 --working-directory "$WORKINGDIR" -e "$NODEJS" index.js
+  "$ALACRITTY" -d 80 20 --working-directory "$WORKINGDIR" -e "$NODEJS" index.js
 }
 
 WORKINGDIR="$(workingdir "$0")"
@@ -26,8 +26,8 @@ COMMAND=""
 while [ "x$COMMAND" != "xq" ]; do
   indexjs
   VALUE="$(cat /tmp/stillworking-wakatime.out)"
+  echo "$(date +%s)$SEPARATOR$VALUE" >> ~/.stillworking.db
   if [ ! -z "$VALUE" ]; then
-    echo "$(date +%s)$SEPARATOR$VALUE" | tee ~/.stillworking.db
     PROJECT="$(echo "$VALUE" | cut -d"$SEPARATOR" -f1)"
     ENTITY="$(echo "$VALUE" | cut -d"$SEPARATOR" -f2)"
     wakatime --write --plugin "$PLUGIN/$VERSION" --entity-type app --project "$PROJECT" --entity "$ENTITY" &
