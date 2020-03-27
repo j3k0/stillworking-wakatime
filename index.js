@@ -3,9 +3,7 @@
 const fs = require('fs');
 const child_process = require('child_process');
 const enquirer = require('enquirer');
-
-// const PLUGIN = "stillworking"
-// const VERSION = "1.1.0"
+const SEPARATOR = ';';
 
 let activities = fs
   .readFileSync(process.env.HOME + '/.stillworking', 'utf-8')
@@ -35,7 +33,7 @@ function rememberActivity(r) {
 const projects = () =>
   Object.keys(
     activities
-      .map(a => a.split(':')[0])
+      .map(a => a.split(SEPARATOR)[0])
       .reduce((obj, proj) => {
         obj[proj] = 1;
         return obj;
@@ -57,43 +55,45 @@ const exec = (cmd) => {
   });
 };
 
-const NOT_WORKING = '- I am not working'
+const NOT_WORKING = '- I am not working';
+const OTHER = '+ Other';
 
 // prompt "Question" "Default value"
 async function applePrompt() {
   try {
-    const lastValue = activities[0] || 'fovea:accounting';
+    const lastValue = activities[0] || OTHER;
     const ret = await (new enquirer.AutoComplete({
       message: 'What are you working on?',
       limit: 10,
       choices: [
+        '',
         lastValue,
         NOT_WORKING,
-        '+ Other',
+        OTHER,
         ...activities.slice(1)
       ],
       suggest (input, choices) {
         const str = input.toLowerCase();
         const ret = choices.filter(ch => ch.message.toLowerCase().includes(str));
         if (ret.length === 0)
-          return [{message: '+ Other', value: '+ Other'}];
+          return [{message: OTHER, value: OTHER}];
         return ret;
       }
     })).run();
-    if (ret === '+ Other') {
+    if (ret === OTHER) {
       const project = await (new enquirer.Input({
         message: 'Project?',
-        initial: lastValue.split(':')[0]
+        initial: lastValue.split(SEPARATOR)[0]
       })).run();
       const activity = await (new enquirer.Input({
         message: 'Activity?',
-        initial: lastValue.split(':').slice(1).join(':')
+        initial: lastValue.split(SEPARATOR).slice(1).join(SEPARATOR)
       })).run();
       if (!project || !activity) {
         return await applePrompt();
       }
       else {
-        const ret = project + ':' + activity;
+        const ret = project + SEPARATOR + activity.replace(new RegExp(SEPARATOR, 'g'), ':');
         rememberActivity(ret);
         return ret;
       }
@@ -116,49 +116,8 @@ async function applePrompt() {
 
 async function main() {
   const value = await applePrompt();
-  // if (value) {
-  //   const project = value.split(':')[0];
-  //   const entity = value.split(':').slice(1).join(':');
-  //   const cmd = `wakatime --write --plugin "${PLUGIN}/${VERSION}" --entity-type app --project "${project}" --entity "${entity}"`;
-  //   const res = await exec(cmd);
-  //   console.log(res.stdout);
-  // }
   fs.writeFileSync('/tmp/stillworking-wakatime.out', value || '');
 }
 
 main();
 
-/*
-async function prompt() {
-  has_response=NO
-  while [ $has_response = NO ]; do
-    t0="$(gdate +%s%3N)"
-    ret="$(applePrompt "$1" "$2")"
-    t1="$(gdate +%s%3N)"
-
-    # If the prompt is exited too fast, it means the user was
-    # probably hitting enter/escape for another reason.
-    # We'll ask again.
-    if [ $((t1 - t0)) -ge 1000 ]; then
-      has_response=YES
-    fi
-  done
-  echo "$ret"
-}
-
-while true; do
-  if prompt "What are you working on?" "$LAST_PROJECT" | tee ~/.stillworking; then
-    NEW_PROJECT="$(cat ~/.stillworking)"
-    if [ ! -z "$NEW_PROJECT" ]; then
-      PROJECT="$(echo "$NEW_PROJECT" | cut -d: -f1)"
-      ENTITY="$(echo "$NEW_PROJECT" | cut -d: -f2-)"
-      if [ -z "$ENTITY" ]; then
-        ENTITY="$PROJECT"
-      fi
-      wakatime --write --plugin "$PLUGIN/$VERSION" --entity-type app --project "$PROJECT" --entity "$ENTITY"
-      LAST_PROJECT="$NEW_PROJECT"
-    fi
-  fi
-  sleep $((14 * 60)) # every 14 minutes (wakatime timeout is 15 minutes)
-done
-*/

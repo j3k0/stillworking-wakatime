@@ -5,6 +5,7 @@ VERSION="1.1.0"
 NODEJS="/Users/jeko/.nvm/versions/node/v12.14.0/bin/node"
 ALACRITTY="/Applications/Alacritty.app/Contents/MacOS/alacritty"
 TIMEOUT="$((14 * 60))"
+SEPARATOR=";"
 
 function workingdir() {
   LINK="$(readlink "$1")"
@@ -26,9 +27,9 @@ while [ "x$COMMAND" != "xq" ]; do
   indexjs
   VALUE="$(cat /tmp/stillworking-wakatime.out)"
   if [ ! -z "$VALUE" ]; then
-    echo "$VALUE"
-    PROJECT="$(echo "$VALUE" | cut -d: -f1)"
-    ENTITY="$(echo "$VALUE" | cut -d: -f2)"
+    echo "$(date +%s)$SEPARATOR$VALUE" | tee ~/.stillworking.db
+    PROJECT="$(echo "$VALUE" | cut -d"$SEPARATOR" -f1)"
+    ENTITY="$(echo "$VALUE" | cut -d"$SEPARATOR" -f2)"
     wakatime --write --plugin "$PLUGIN/$VERSION" --entity-type app --project "$PROJECT" --entity "$ENTITY" &
   fi
   echo '(r)efresh (q)uit'
