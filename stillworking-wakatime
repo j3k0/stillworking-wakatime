@@ -22,6 +22,14 @@ function indexjs() {
 
 WORKINGDIR="$(workingdir "$0")"
 
+ONCE=false
+while [ ! -z "$1" ]; do
+  if [ "$1" = "--once" ]; then
+    ONCE=true
+  fi
+  shift
+done
+
 COMMAND=""
 while [ "x$COMMAND" != "xq" ]; do
   indexjs
@@ -31,6 +39,9 @@ while [ "x$COMMAND" != "xq" ]; do
     PROJECT="$(echo "$VALUE" | cut -d"$SEPARATOR" -f1)"
     ENTITY="$(echo "$VALUE" | cut -d"$SEPARATOR" -f2)"
     wakatime --write --plugin "$PLUGIN/$VERSION" --entity-type app --project "$PROJECT" --entity "$ENTITY" &
+  fi
+  if [ "$ONCE" = true ]; then
+    exit 0
   fi
   echo '(r)efresh (q)uit'
   read -t "$TIMEOUT" COMMAND # every 14 minutes (wakatime timeout is 15 minutes)
