@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import math
 import os
 import time
 import sys
@@ -39,7 +40,12 @@ def _db_process_line(line):
         duration = int(next_date) - int(last_date)
         if duration > 60 * 15:
             # no reports for a long period, assuming we stopped working
-            duration = 0
+            duration = 60 * 2
+        else:
+            seconds = duration % 60
+            duration -= seconds
+            if seconds > 30:
+                duration += 60
         month = datetime.utcfromtimestamp(int(last_date)).strftime('%Y-%m')
         if month:
             key = "%s;%s" % (month, last_project)
@@ -55,15 +61,21 @@ def should_show(date, project):
             return False
     return True
 
+def format_duration(d):
+    hours = math.floor(d / 3600)
+    rest = d - hours * 3600
+    minutes = round(rest / 60)
+    return "%d:%02d" % (hours, minutes)
+
 total_duration = 0
 for key in sorted(activities.keys()):
     duration = activities[key]
     [date, project] = key.split(';')
     if should_show(date, project):
-        duration_fmt = str(timedelta(seconds=duration))[:-3]
+        duration_fmt = format_duration(duration) # str(timedelta(seconds=duration))[:-3]
         print "%7s    [%5s] %15s" % (date, duration_fmt, project)
         total_duration += duration
 
-duration_fmt = str(timedelta(seconds=total_duration))[:-3]
-print "      TOTAL:%5s " % duration_fmt
+duration_fmt = format_duration(total_duration) # str(timedelta(seconds=total_duration))[:-3]
+print "    TOTAL: %6s " % duration_fmt
 
